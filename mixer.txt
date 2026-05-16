@@ -1,0 +1,81 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// LCD address (usually 0x27 or 0x3F)
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Motor Pins
+#define PWM_PIN 5
+#define IN1 18
+#define IN2 19
+
+// Button Pins
+#define BTN_INC 14
+#define BTN_DEC 26
+
+// PWM settings
+const int pwmChannel = 0;
+const int pwmFreq = 1000;
+const int pwmResolution = 8;   // 8-bit resolution (0-255)
+
+int speedValue = 0;   // 0 to 255
+
+void setup() {
+
+  // Motor pins
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+
+  // Button pins
+  pinMode(BTN_INC, INPUT);
+  pinMode(BTN_DEC, INPUT);
+
+  // PWM setup
+  //ledcSetup(pwmChannel, pwmFreq, pwmResolution);
+  //ledcAttachPin(PWM_PIN, pwmChannel);
+  ledcAttach(PWM_PIN,pwmFreq,pwmResolution);
+
+  // Motor direction (Forward)
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  // LCD Init
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(0, 0);
+  lcd.print("Motor Control");
+  delay(1000);
+  lcd.clear();
+}
+
+void loop() {
+
+  // Increase speed
+  if (digitalRead(BTN_INC) == HIGH) {
+    speedValue += 10;
+    if (speedValue > 255) speedValue = 255;
+    delay(200);  // debounce
+  }
+
+  // Decrease speed
+  if (digitalRead(BTN_DEC) == HIGH) {
+    speedValue -= 10;
+    if (speedValue < 0) speedValue = 0;
+    delay(200);  // debounce
+  }
+
+  // Apply PWM
+  ledcWrite(PWM_PIN, speedValue);
+
+  // Display Speed
+  lcd.setCursor(0, 0);
+  lcd.print("Speed: ");
+  lcd.print(speedValue);
+  lcd.print("   ");  // Clear extra digits
+
+  lcd.setCursor(0, 1);
+  lcd.print("Duty: ");
+  lcd.print((speedValue * 100) / 255);
+  lcd.print("%   ");
+}
